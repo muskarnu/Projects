@@ -1,35 +1,16 @@
-
-
 local cloneref  = cloneref or function(...) return ... end
 local TextService = cloneref(game:GetService("TextService"))
 local RunService = cloneref(game:GetService("RunService"))
---- The Highlight class
---- @class Highlight
 local Highlight = {}
-
--- PRIVATE METHODS/PROPERTIES --
-
---[[
-    Char Object:
-    {
-        Char: string -- A single character
-        Color: Color3 -- The intended color of the char
-        Line: number -- The line number
-    }
-]]
 
 local parentFrame
 local scrollingFrame
 local textFrame
 local lineNumbersFrame
 local lines = {}
-
---- Contents of the table- array of char objects
 local tableContents = {}
-
 local line = 0
 local largestX = 0
-
 local lineSpace = 15
 local font = Enum.Font.Ubuntu
 local textSize = 14
@@ -47,7 +28,6 @@ local lineNumberColor = commentColor
 local genericColor = Color3.fromRGB(240, 240, 240)
 
 local operators = {"^(function)[^%w_]", "^(local)[^%w_]", "^(if)[^%w_]", "^(for)[^%w_]", "^(while)[^%w_]", "^(then)[^%w_]", "^(do)[^%w_]", "^(else)[^%w_]", "^(elseif)[^%w_]", "^(return)[^%w_]", "^(end)[^%w_]", "^(continue)[^%w_]", "^(and)[^%w_]", "^(not)[^%w_]", "^(or)[^%w_]", "[^%w_](or)[^%w_]", "[^%w_](and)[^%w_]", "[^%w_](not)[^%w_]", "[^%w_](continue)[^%w_]", "[^%w_](function)[^%w_]", "[^%w_](local)[^%w_]", "[^%w_](if)[^%w_]", "[^%w_](for)[^%w_]", "[^%w_](while)[^%w_]", "[^%w_](then)[^%w_]", "[^%w_](do)[^%w_]", "[^%w_](else)[^%w_]", "[^%w_](elseif)[^%w_]", "[^%w_](return)[^%w_]", "[^%w_](end)[^%w_]"}
---- In this case, patterns could not be used, so just the string characters are provided
 local strings = {{"\"", "\""}, {"'", "'"}, {"%[%[", "%]%]", true}}
 local comments = {"%-%-%[%[[^%]%]]+%]?%]?", "(%-%-[^\n]+)"}
 local functions = {"[^%w_]([%a_][%a%d_]*)%s*%(", "^([%a_][%a%d_]*)%s*%(", "[:%.%(%[%p]([%a_][%a%d_]*)%s*%("}
@@ -56,8 +36,6 @@ local booleans = {"[^%w_](true)", "^(true)", "[^%w_](false)", "^(false)", "[^%w_
 local objects = {"[^%w_:]([%a_][%a%d_]*):", "^([%a_][%a%d_]*):"}
 local other = {"[^_%s%w=>~<%-%+%*]", ">", "~", "<", "%-", "%+", "=", "%*"}
 local offLimits = {}
-
---- Determines if index is in a string
 function isOffLimits(index)
     for _, v in next, offLimits do
         if index >= v[1] and index <= v[2] then
@@ -97,7 +75,6 @@ function gfind(str, pattern)
     end)
 end
 
---- Finds and highlights comments with `commentColor`
 function renderComments()
     local str = Highlight:getRaw()
     local step = 1
@@ -119,7 +96,6 @@ function renderComments()
     end
 end
 
--- Finds and highlights strings with `stringColor`
 function renderStrings()
     local stringType
     local stringEndType
@@ -162,9 +138,7 @@ function renderStrings()
     end
 end
 
---- Highlights the specified patterns with the specified color
---- @param patternArray string[]
----@param color userdata
+
 function highlightPattern(patternArray, color)
     local str = Highlight:getRaw()
     local step = 1
@@ -185,8 +159,6 @@ function highlightPattern(patternArray, color)
     end
 end
 
---- Automatically replaces reserved chars with escape chars
---- @param s string
 function autoEscape(s)
     for i = 0, #s do
         local char = string.sub(s, i, i)
@@ -215,7 +187,6 @@ function autoEscape(s)
     return s
 end
 
---- Main function for syntax highlighting tableContents
 function render()
     offLimits = {}
     lines = {}
@@ -321,10 +292,6 @@ function updateZIndex()
     end
 end
 
--- PUBLIC METHODS --
-
---- Runs when a new object is instantiated
---- @param frame userdata
 function Highlight:init(frame)
     if typeof(frame) == "Instance" and frame:IsA("Frame") then
         frame:ClearAllChildren()
@@ -359,8 +326,7 @@ function Highlight:init(frame)
     end
 end
 
---- Sets the raw text of the code box (\n = new line, \t converted to spaces)
---- @param raw string
+
 function Highlight:setRaw(raw)
     raw = raw .. "\n"
     tableContents = {}
@@ -381,8 +347,7 @@ function Highlight:setRaw(raw)
     render()
 end
 
---- Returns the (string) raw text of the code box (\n = new line). This includes placeholder characters so it should only be used internally.
---- @return string
+
 function Highlight:getRaw()
     local result = ""
     for _, char in next, tableContents do
@@ -391,8 +356,7 @@ function Highlight:getRaw()
     return result
 end
 
---- Returns the (string) text of the code box (\n = new line)
---- @return string
+
 function Highlight:getString()
     local result = ""
     for _, char in next, tableContents do
@@ -401,21 +365,17 @@ function Highlight:getString()
     return result
 end
 
---- Returns the (char[]) array that holds all the lines in order as strings
---- @return table[]
+
 function Highlight:getTable()
     return tableContents
 end
 
---- Returns the (int) number of lines in the code box
---- @return number
+
 function Highlight:getSize()
     return #tableContents
 end
 
---- Returns the (string) line of the specified line number
---- @param line number
---- @return string
+
 function Highlight:getLine(line)
     local currentline = 0
     local rightLine = false
@@ -434,9 +394,7 @@ function Highlight:getLine(line)
     return result
 end
 
---- Replaces the specified line number with the specified string (\n will overwrite further lines)
---- @param line number
----@param text string
+
 function Highlight:setLine(line, text)
     if #tableContents and line >= tableContents[#tableContents].Line then
         for i = tableContents[#tableContents].Line, line do
@@ -467,9 +425,6 @@ function Highlight:setLine(line, text)
     error("Unable to set line")
 end
 
---- Inserts a line made from the specified string and moves all existing lines down (\n will insert further lines)
---- @param line number
----@param text string
 function Highlight:insertLine(line, text)
     if #tableContents and line >= tableContents[#tableContents].Line then
         Highlight:setLine(line, text)
@@ -490,10 +445,8 @@ function Highlight:insertLine(line, text)
     error("Unable to insert line")
 end
 
--- CONSTRUCTOR --
 
 local constructor = {}
---- responsible for instantiation
 function constructor.new(...)
     local class = Highlight
     local new = {}
