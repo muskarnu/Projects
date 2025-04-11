@@ -1,10 +1,4 @@
---[[
-    higlight.lua v0.0.1 by exxtremewa#9394
-    
-    Features:
-     - uses the power of fancy syntax detection algorithms to convert a frame into a syntax highlighted high quality code box
-     - is cool
-]]
+
 
 local cloneref  = cloneref or function(...) return ... end
 local TextService = cloneref(game:GetService("TextService"))
