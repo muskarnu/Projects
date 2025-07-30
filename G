@@ -1,0 +1,443 @@
+TrollTab:AddSection({"تدبيل طيارات مفيدة للحروب🚀 - "})
+
+   local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+local originalPosition = player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character.HumanoidRootPart.Position
+
+-- VariÃ¡veis principais
+local clickDetector = Workspace.WorkspaceCom["001_Airport"].AirportHanger["001_JetCloneButton"].Button.ClickDetector
+local jetStorage = Workspace.WorkspaceCom["001_Airport"].AirportHanger["001_JetStorage"]
+local buttonPosition = Vector3.new(498.99, -19.52, 278.73)
+local targetPosition = Vector3.new(-26.20, 98.02, 17.45)
+local voidPosition = Vector3.new(0, -1000, 0)
+local selectedPlayer = nil
+
+local running1 = false
+local running2 = false
+local loopConnection1, loopConnection2
+
+-- FunÃ§Ã£o para encontrar a primeira parte fÃ­sica do jato
+local function getFirstPart(jet)
+    for _, part in ipairs(jet:GetDescendants()) do
+        if part:IsA("BasePart") then
+            return part
+        end
+    end
+    return nil
+end
+
+-- FunÃ§Ã£o para calcular distÃ¢ncia
+local function getDistance(pos1, pos2)
+    return (pos1 - pos2).Magnitude
+end
+
+-- FunÃ§Ã£o para esperar novo jato
+local function waitForNewJet(existingJets)
+    local maxAttempts = 10
+    local attempt = 0
+    while (running1 or running2) and attempt < maxAttempts do
+        for _, jet in ipairs(jetStorage:GetChildren()) do
+            if jet:IsA("Model") and not existingJets[jet] then
+                return jet
+            end
+        end
+        attempt = attempt + 1
+        RunService.Heartbeat:Wait()
+    end
+    return nil
+end
+
+-- FunÃ§Ã£o para teleportar o jato
+local function teleportAndStabilizeJet(jet, position)
+    local primaryPart = getFirstPart(jet)
+    if not primaryPart then
+        warn("[ERRO] Nenhuma parte fÃ­sica no jato:", jet.Name)
+        return false
+    end
+
+    local maxAttempts = 5
+    local attempt = 0
+    while attempt < maxAttempts do
+        pcall(function()
+            jet.PrimaryPart = primaryPart
+        end)
+        primaryPart.Anchored = false
+        task.wait(0.3)
+        pcall(function()
+            jet:SetPrimaryPartCFrame(CFrame.new(position) * CFrame.Angles(0, math.rad(90), 0))
+            task.wait(0.5)
+            primaryPart.Velocity = Vector3.new(0, 0, 0)
+            primaryPart.RotVelocity = Vector3.new(0, 0, 0)
+        end)
+        if (jet.PrimaryPart and (jet.PrimaryPart.Position - position).Magnitude < 5) then
+            return true
+        end
+        attempt = attempt + 1
+        task.wait(0.5)
+    end
+    warn("[ERRO] Falha ao teleportar jato:", jet.Name)
+    return false
+end
+
+-- FunÃ§Ã£o para mostrar notificaÃ§Ã£o com foto do player
+local function showNotification(playerName, playerImage)
+    local notification = Instance.new("ScreenGui")
+    notification.Parent = playerGui
+
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 200, 0, 100)
+    frame.Position = UDim2.new(0.5, -100, 0.5, -50)
+    frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    frame.Parent = notification
+
+    local image = Instance.new("ImageLabel")
+    image.Size = UDim2.new(0, 50, 0, 50)
+    image.Position = UDim2.new(0, 10, 0, 25)
+    image.BackgroundTransparency = 1
+    image.Image = playerImage or "rbxasset://textures/ui/GuiImagePlaceholder.png"
+    image.Parent = frame
+
+    local text = Instance.new("TextLabel")
+    text.Size = UDim2.new(0, 130, 0, 50)
+    text.Position = UDim2.new(0, 70, 0, 25)
+    text.BackgroundTransparency = 1
+    text.TextColor3 = Color3.new(1, 1, 1)
+    text.Text = "Jogador: " .. (playerName or "Nenhum")
+    text.Font = Enum.Font.SourceSansBold
+    text.TextSize = 16
+    text.Parent = frame
+
+    task.delay(3, function()
+        notification:Destroy()
+    end)
+end
+
+-- Loop modo 1: Spam Local
+local function startLoop1()
+    if running1 then return end
+    running1 = true
+
+    for _, jet in ipairs(jetStorage:GetChildren()) do
+        if jet:IsA("Model") then
+            local primaryPart = getFirstPart(jet)
+            if primaryPart and getDistance(primaryPart.Position, buttonPosition) < 50 then
+                teleportAndStabilizeJet(jet, voidPosition)
+                task.wait(0.5)
+            end
+        end
+    end
+
+    loopConnection1 = RunService.Heartbeat:Connect(function()
+        if not running1 then return end
+
+        local existingJets = {}
+        for _, jet in ipairs(jetStorage:GetChildren()) do
+            existingJets[jet] = true
+        end
+
+        fireclickdetector(clickDetector)
+        player.Character:SetPrimaryPartCFrame(CFrame.new(buttonPosition))
+        task.wait(0.5)
+
+        local newJet = waitForNewJet(existingJets)
+        if newJet then
+            while not teleportAndStabilizeJet(newJet, targetPosition) do
+                task.wait(0.5)
+            end
+            task.wait(0.5)
+        else
+            task.wait(0.5)
+        end
+    end)
+end
+
+local function stopLoop1()
+    running1 = false
+    if loopConnection1 then
+        loopConnection1:Disconnect()
+        loopConnection1 = nil
+    end
+    if originalPosition and player.Character then
+        player.Character:SetPrimaryPartCFrame(CFrame.new(originalPosition))
+    end
+end
+
+-- Loop modo 2: Spam em Jogador
+local function startLoop2()
+    if running2 or not selectedPlayer or not selectedPlayer.Character then return end
+    running2 = true
+
+    for _, jet in ipairs(jetStorage:GetChildren()) do
+        if jet:IsA("Model") then
+            local primaryPart = getFirstPart(jet)
+            if primaryPart and getDistance(primaryPart.Position, buttonPosition) < 50 then
+                teleportAndStabilizeJet(jet, voidPosition)
+                task.wait(0.5)
+            end
+        end
+    end
+
+    loopConnection2 = RunService.Heartbeat:Connect(function()
+        if not running2 then return end
+
+        local existingJets = {}
+        for _, jet in ipairs(jetStorage:GetChildren()) do
+            existingJets[jet] = true
+        end
+
+        fireclickdetector(clickDetector)
+        player.Character:SetPrimaryPartCFrame(CFrame.new(buttonPosition))
+        task.wait(0.5)
+
+        local newJet = waitForNewJet(existingJets)
+        if newJet and selectedPlayer.Character and selectedPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            while not teleportAndStabilizeJet(newJet, selectedPlayer.Character.HumanoidRootPart.Position) do
+                task.wait(0.5)
+            end
+            task.wait(0.5)
+        else
+            task.wait(0.5)
+        end
+    end)
+end
+
+local function stopLoop2()
+    running2 = false
+    if loopConnection2 then
+        loopConnection2:Disconnect()
+        loopConnection2 = nil
+    end
+    if originalPosition and player.Character then
+        player.Character:SetPrimaryPartCFrame(CFrame.new(originalPosition))
+    end
+end
+
+
+--  - Tab10
+TrollTab:AddTextBox({
+    Name = "رسبن طيارات عل وادم",
+    Description = "اقوى طيارات اريد",
+    PlaceholderText = "اكتب اسم لاعب",
+    Callback = function(Value)
+        local input = Value:lower()
+        if input ~= "" then
+            for _, plr in ipairs(Players:GetPlayers()) do
+                if plr.Name:lower():sub(1, #input) == input then
+                    selectedPlayer = plr
+                    showNotification(plr.Name, "rbxthumb://id=" .. plr.UserId .. "?width=50&height=50")
+                    break
+                end
+            end
+        else
+            selectedPlayer = nil
+            showNotification("Nenhum", nil)
+        end
+    end
+})
+
+TrollTab:AddParagraph({"صنع بواسطة فريق المطورين جحيم+رامي"})
+
+TrollTab:AddButton({
+    Name = "اصمطهم بطيارة",
+    Callback = function()
+        startLoop1()
+    end
+})
+
+TrollTab:AddButton({
+    Name = "ايقاف",
+    Callback = function()
+        stopLoop1()
+    end
+})
+
+TrollTab:AddSection({"حبيبي إذا علقت شيل الطيارة وارجع فعل"})
+
+TrollTab:AddButton({
+    Name = "سبام طيارات على اللاعبين",
+    Callback = function()
+        startLoop2()
+    end
+})
+
+TrollTab:AddButton({
+    Name = "وقف السبام",
+    Callback = function()
+        stopLoop2()
+    end
+})
+
+
+ 
+
+end -- Fim do bloco de scripts
+
+TrollTab:AddSection({ "Desastres naturais" })
+TrollTab:AddButton({
+    Name = "[⚠️ جيب سفينه واطبگها بالشارع]",
+    Description = "ماكو شي بس سفينة ترگع ام السيرفر",
+    Callback = function()
+local RS = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local TextChatService = game:GetService("TextChatService")
+local Player = game.Players.LocalPlayer
+local Character = Player.Character or Player.CharacterAdded:Wait()
+local Humanoid = Character:WaitForChild("Humanoid")
+local RootPart = Character:WaitForChild("HumanoidRootPart")
+local Vehicles = workspace:WaitForChild("Vehicles")
+
+-- Aviso no chat
+if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then 
+    TextChatService.TextChannels.RBXGeneral:SendAsync(
+        "hi\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r[⚠️سفينة ترگعكم] DemoZارگع السيرفر بسكربت"
+    )
+else 
+    print("Nadaa")
+end
+
+-- Função para tocar o áudio 5 vezes
+local selectedAudioID = 9068077052
+local function playAudio()
+    if not selectedAudioID then
+        warn("Nenhum áudio selecionado!")
+        return
+    end
+
+    local args = {
+        [1] = workspace,
+        [2] = selectedAudioID,
+        [3] = 1,
+    }
+
+    for i = 1, 5 do
+        RS.RE:FindFirstChild("1Gu1nSound1s"):FireServer(unpack(args))
+
+        local sound = Instance.new("Sound")
+        sound.SoundId = "rbxassetid://" .. tostring(selectedAudioID)
+        sound.Parent = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+        if sound.Parent then
+            sound:Play()
+        else
+            warn("HumanoidRootPart não encontrado")
+            break
+        end
+
+        task.wait(1.5)
+        sound:Destroy()
+    end
+end
+
+-- Spawn do barco
+local function spawnBoat()
+    RootPart.CFrame = CFrame.new(1754, -2, 58)
+    task.wait(0.5)
+    RS:WaitForChild("RE"):FindFirstChild("1Ca1r"):FireServer("PickingBoat", "PirateFree")
+    task.wait(1)
+    return Vehicles:FindFirstChild(Player.Name .. "Car")
+end
+
+local PCar = spawnBoat()
+if not PCar then
+    warn("Falha ao spawnar o barco")
+    return
+end
+
+print("Barco PirateFree gerado!")
+
+local Seat = PCar:FindFirstChild("Body") and PCar.Body:FindFirstChild("VehicleSeat")
+if not Seat then
+    warn("Seat não encontrado")
+    return
+end
+
+-- Sentar no assento
+repeat
+    task.wait(0.1)
+    RootPart.CFrame = Seat.CFrame * CFrame.new(0, 1, 0)
+until Humanoid.SeatPart == Seat
+
+print("Jogador sentado com sucesso!")
+
+-- Tocar áudio em paralelo
+task.spawn(playAudio)
+
+-- Ejetar após 4 segundos
+task.delay(4, function()
+    if Humanoid.SeatPart then
+        Humanoid.Sit = false
+    end
+    RootPart.CFrame = CFrame.new(0, 0, 0)
+    print("Jogador ejetado e teleportado")
+end)
+
+-- Flip loop paralelo
+local RE_Flip = RS:WaitForChild("RE"):WaitForChild("1Player1sCa1r")
+task.spawn(function()
+    while PCar and PCar.Parent do
+        RE_Flip:FireServer("Flip")
+        task.wait(0.5)
+    end
+end)
+
+-- Configuração de movimento
+local waypoints = {
+    Vector3.new(-16, 0, -47),
+    Vector3.new(-110, 0, -45),
+    Vector3.new(16, 0, -55)
+}
+
+local currentIndex = 1
+local nextIndex = 2
+local moveSpeed = 15
+local rotationSpeed = math.rad(720) -- 720°/s
+local progress = 0
+local currentRotation = 0
+
+local function lerpCFrame(a, b, t)
+    return a:lerp(b, t)
+end
+
+-- Movimento + rotação
+RunService.Heartbeat:Connect(function(dt)
+    if not (PCar and PCar.PrimaryPart) then return end
+
+    local startPos = waypoints[currentIndex]
+    local endPos = waypoints[nextIndex]
+
+    progress += (moveSpeed * dt) / (startPos - endPos).Magnitude
+    if progress >= 1 then
+        progress = 0
+        currentIndex = nextIndex
+        nextIndex = (nextIndex % #waypoints) + 1
+    end
+
+    local newPos = lerpCFrame(CFrame.new(startPos), CFrame.new(endPos), progress).p
+    currentRotation += rotationSpeed * dt
+
+    local cf = CFrame.new(newPos) * CFrame.Angles(0, currentRotation, 0)
+    PCar:SetPrimaryPartCFrame(cf)
+end)
+end
+})
+
+TrollTab:AddButton({
+    Name = "[🛑] شيل السفينة",
+    Description = "ازالة السفينة كافي خطية.",
+    Callback = function()
+        -- Tenta remover o veículo via RemoteEvent
+        local success, err = pcall(function()
+            local args = { "DeleteAllVehicles" }
+            game:GetService("ReplicatedStorage"):WaitForChild("RE"):WaitForChild("1Ca1r"):FireServer(unpack(args))
+        end)
+
+        if not success then
+            warn("Falha ao deletar veículos:", err)
+        else
+            print("[Nytherune Hub] Tornado finalizado e veículos deletados.")
+        end
+    end
+})
