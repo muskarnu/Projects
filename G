@@ -1,4 +1,4 @@
-TrollTab:AddSection({"تدبيل طيارات مفيدة للحروب🚀 - "})
+ميزة1
 
    local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
@@ -115,7 +115,7 @@ local function showNotification(playerName, playerImage)
         notification:Destroy()
     end)
 end
-
+لوب1
 -- Loop modo 1: Spam Local
 local function startLoop1()
     if running1 then return end
@@ -165,7 +165,7 @@ local function stopLoop1()
         player.Character:SetPrimaryPartCFrame(CFrame.new(originalPosition))
     end
 end
-
+لوب2
 -- Loop modo 2: Spam em Jogador
 local function startLoop2()
     if running2 or not selectedPlayer or not selectedPlayer.Character then return end
@@ -242,14 +242,14 @@ TrollTab:AddTextBox({
 TrollTab:AddParagraph({"صنع بواسطة فريق المطورين جحيم+رامي"})
 
 TrollTab:AddButton({
-    Name = "اصمطهم بطيارة",
+    Name = "اصمطهم بطيارة",لوب1
     Callback = function()
         startLoop1()
     end
 })
 
 TrollTab:AddButton({
-    Name = "ايقاف",
+    Name = "لوب1 ايقاف",
     Callback = function()
         stopLoop1()
     end
@@ -258,14 +258,14 @@ TrollTab:AddButton({
 TrollTab:AddSection({"حبيبي إذا علقت شيل الطيارة وارجع فعل"})
 
 TrollTab:AddButton({
-    Name = "سبام طيارات على اللاعبين",
+    Name = " سبام طيارات على اللاعبين لوب2",
     Callback = function()
         startLoop2()
     end
 })
 
 TrollTab:AddButton({
-    Name = "وقف السبام",
+    Name = "وقف السبام لوب2",
     Callback = function()
         stopLoop2()
     end
@@ -275,7 +275,7 @@ TrollTab:AddButton({
  
 
 end -- Fim do bloco de scripts
-
+ميزة2
 TrollTab:AddSection({ "Desastres naturais" })
 TrollTab:AddButton({
     Name = "[⚠️ جيب سفينه واطبگها بالشارع]",
