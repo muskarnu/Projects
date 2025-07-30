@@ -1,5 +1,4 @@
-TrollTab:AddSection({"تدبيل طيارات مفيدة للحروب🚀 - "})
-
+قسم ميزة1 تشغيل
    local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
@@ -166,56 +165,7 @@ local function stopLoop1()
     end
 end
 
--- Loop modo 2: Spam em Jogador
-local function startLoop2()
-    if running2 or not selectedPlayer or not selectedPlayer.Character then return end
-    running2 = true
-
-    for _, jet in ipairs(jetStorage:GetChildren()) do
-        if jet:IsA("Model") then
-            local primaryPart = getFirstPart(jet)
-            if primaryPart and getDistance(primaryPart.Position, buttonPosition) < 50 then
-                teleportAndStabilizeJet(jet, voidPosition)
-                task.wait(0.5)
-            end
-        end
-    end
-
-    loopConnection2 = RunService.Heartbeat:Connect(function()
-        if not running2 then return end
-
-        local existingJets = {}
-        for _, jet in ipairs(jetStorage:GetChildren()) do
-            existingJets[jet] = true
-        end
-
-        fireclickdetector(clickDetector)
-        player.Character:SetPrimaryPartCFrame(CFrame.new(buttonPosition))
-        task.wait(0.5)
-
-        local newJet = waitForNewJet(existingJets)
-        if newJet and selectedPlayer.Character and selectedPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            while not teleportAndStabilizeJet(newJet, selectedPlayer.Character.HumanoidRootPart.Position) do
-                task.wait(0.5)
-            end
-            task.wait(0.5)
-        else
-            task.wait(0.5)
-        end
-    end)
-end
-
-local function stopLoop2()
-    running2 = false
-    if loopConnection2 then
-        loopConnection2:Disconnect()
-        loopConnection2 = nil
-    end
-    if originalPosition and player.Character then
-        player.Character:SetPrimaryPartCFrame(CFrame.new(originalPosition))
-    end
-end
-
+-- 
 
 --  - Tab10
 TrollTab:AddTextBox({
@@ -255,7 +205,7 @@ TrollTab:AddButton({
     end
 })
 
-TrollTab:AddSection({"حبيبي إذا علقت شيل الطيارة وارجع فعل"})
+TrollTab:AddSection({""})
 
 TrollTab:AddButton({
     Name = "سبام طيارات على اللاعبين",
@@ -278,8 +228,8 @@ end -- Fim do bloco de scripts
 
 TrollTab:AddSection({ "Desastres naturais" })
 TrollTab:AddButton({
-    Name = "[⚠️ جيب سفينه واطبگها بالشارع]",
-    Description = "ماكو شي بس سفينة ترگع ام السيرفر",
+    Name = "[⚠️ميزة2]",
+    Description = "ميزة2",
     Callback = function()
 local RS = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
